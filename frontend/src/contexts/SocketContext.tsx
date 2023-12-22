@@ -23,7 +23,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const [socket, setSocket] = useState<Socket | null>(defaultState.socket);
 
   useEffect(() => {
-    const s = io(import.meta.env.RAILWAY_STATIC_URL || "http://localhost:3001", {
+    const s = io(process.env.RAILWAY_STATIC_URL || "http://localhost:3001", {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
