@@ -5,9 +5,8 @@ import { useEffect, useState } from "react";
 import { IconClock, IconNumber } from "@tabler/icons-react";
 import { useInterval } from "@mantine/hooks";
 import { useGame } from "../hooks/useGame";
-import Game from "../views/Game";
 import { RoomStatusType } from "../types/RoomType";
-import { ReactCompareSlider, ReactCompareSliderImage, useReactCompareSliderRef } from "react-compare-slider";
+import { ReactCompareSlider, ReactCompareSliderImage } from "react-compare-slider";
 
 interface RoundProps {
   round: RoundType;
@@ -24,7 +23,6 @@ const Round = ({ round, index, seconds, totalRounds, status = "lobby" }: RoundPr
   const [s, setS] = useState(seconds || 1 - 1);
 
   const interval = useInterval(() => setS(curr => curr - 1), 1000);
-  const reactCompareSliderRef = useReactCompareSliderRef();
 
   useEffect(() => {
     if (!seconds) return;

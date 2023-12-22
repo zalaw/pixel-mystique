@@ -5,11 +5,11 @@ import cors from "cors";
 import { Server } from "socket.io";
 import crypto from "crypto";
 import { jojoCharacters, jojoStands } from "./data";
-import { delayWithError, generateRounds } from "./utils/general-utils";
+import { generateRounds } from "./utils/general-utils";
 import { RoomSettingsType, RoomType, SettingsValue } from "./types/RoomType";
 import { ClientType, ClientValue } from "./types/ClientType";
 import { RoundType } from "./types/RoundType";
-import Jimp from "jimp";
+import path from "path";
 
 config();
 
@@ -310,26 +310,15 @@ io.on("connection", socket => {
       socket.to(roomCode).emit("CLIENT_DATA_CHANGED", [[room.clients[0].id, "isHost", true, "isReady", false]]);
     }
   });
-
-  socket.on("GET_ROOM", () => {
-    const [_, roomCode] = Array.from(socket.rooms.values());
-
-    const room = rooms.get(roomCode);
-
-    if (!room) return;
-
-    socket.emit("GET_ROOM", room);
-  });
-
-  socket.on("WEATHER_REPORT", async () => {
-    const rounds = await generateRounds(20, false, jojoCharacters, 10);
-
-    socket.emit(
-      "WEATHER_REPORT",
-      rounds.map(round => round.image)
-    );
-  });
 });
+
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../public")));
+
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../public", "index.html"));
+  });
+}
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
