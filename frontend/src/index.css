@@ -1,0 +1,52 @@
+*,
+*::before,
+*::after {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+#root {
+  min-height: 100%;
+  padding: 5%;
+}
+
+.client-container {
+  position: relative;
+}
+
+.icon-top-center {
+  position: absolute;
+  top: -0.5rem;
+  left: 50%;
+  transform: translate(-50%, 0);
+}
+
+.icon-bottom-right {
+  position: absolute;
+  bottom: -1rem;
+  right: -0.5rem;
+}
+
+.icon-bottom-right svg {
+  background-color: #099268;
+  border-radius: 50%;
+  padding: 0.25rem;
+}
+
+.mantine-Modal-inner {
+  backdrop-filter: blur(10px);
+}
+
+.answer-clients {
+  position: absolute;
+  bottom: -0.5rem;
+  left: 50%;
+  transform: translate(-50%, 0);
+}
+
+.circle {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+}
