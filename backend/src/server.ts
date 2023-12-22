@@ -33,35 +33,40 @@ const io = new Server(server, {
 
 io.on("connection", socket => {
   socket.on("CREATE_ROOM", (name: string) => {
-    const code = crypto.randomUUID();
-    const room: RoomType = {
-      code,
-      clients: [
-        {
-          id: socket.id,
-          index: 0,
-          name,
-          isHost: true,
-          isReady: false,
-          isAnswerPicked: false,
+    try {
+      const code = crypto.randomUUID();
+      const room: RoomType = {
+        code,
+        clients: [
+          {
+            id: socket.id,
+            index: 0,
+            name,
+            isHost: true,
+            isReady: false,
+            isAnswerPicked: false,
+          },
+        ],
+        status: "lobby",
+        settings: {
+          scenario: "jojoCharacters",
+          seconds: 10,
+          rounds: 4,
+          grayscale: true,
+          pixelatedValue: 50,
         },
-      ],
-      status: "lobby",
-      settings: {
-        scenario: "jojoCharacters",
-        seconds: 10,
-        rounds: 4,
-        grayscale: true,
-        pixelatedValue: 50,
-      },
-      currentRoundIndex: 0,
-      rounds: [],
-    };
+        currentRoundIndex: 0,
+        rounds: [],
+      };
 
-    rooms.set(code, room);
-    socket.join(code);
+      rooms.set(code, room);
+      socket.join(code);
 
-    socket.emit("ROOM_CREATED", { code, name });
+      socket.emit("ROOM_CREATED", { code, name });
+    } catch (err) {
+      console.log("err in connection");
+      console.log(err);
+    }
   });
 
   socket.on("JOIN_ROOM", (gameId: string, name: string) => {
@@ -296,7 +301,7 @@ io.on("connection", socket => {
     if (room.clients.length === 0) {
       rooms.delete(roomCode);
       const interval = intervals.get(roomCode);
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
       intervals.delete(roomCode);
       return;
     }
