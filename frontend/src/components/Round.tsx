@@ -84,6 +84,7 @@ const Round = ({ round, index, seconds, totalRounds, status = "lobby" }: RoundPr
 
       {status === "finished" ? (
         <ReactCompareSlider
+          onlyHandleDraggable={true}
           itemOne={<ReactCompareSliderImage src={URL.createObjectURL(new Blob([round.image]))} />}
           itemTwo={<ReactCompareSliderImage src={URL.createObjectURL(new Blob([round.originalImage]))} />}
         />
