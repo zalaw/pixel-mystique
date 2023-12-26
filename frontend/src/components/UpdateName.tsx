@@ -1,30 +1,39 @@
-import { useState, useRef } from "react";
 import { Stack, TextInput, Button } from "@mantine/core";
-import { useSocket } from "../hooks/useSocket";
+import { socket } from "../socket";
+import { name } from "../App";
+import { useState } from "react";
 
-interface UpdateNameProps {
-  callback?: () => void;
-}
+const UpdateName = () => {
+  const [localName, setLocalName] = useState("");
 
-const UpdateName = ({ callback }: UpdateNameProps) => {
-  const { socket } = useSocket();
+  const disabled = localName.trim() === "";
 
-  const [isNameError, setIsNameError] = useState(false);
+  const handleUpdateName = (value: string) => {
+    setLocalName(value);
+    localStorage.setItem("BABAJEE_NAME", name.value);
+  };
 
-  const nameInputRef = useRef<HTMLInputElement>(null);
+  const handleSaveName = (e?: React.FormEvent<HTMLFormElement | HTMLButtonElement>) => {
+    if (e) e.preventDefault();
+    if (disabled) return;
 
-  const handleSaveName = () => {
-    if (nameInputRef.current!.value.trim() === "") return setIsNameError(true);
-    localStorage.setItem("BABAJEE_NAME", nameInputRef.current!.value.trim().slice(0, 32));
-    socket?.emit("CLIENT_DATA_CHANGED", "name", nameInputRef.current?.value);
-    callback?.();
+    name.value = localName;
+    socket.emit("CLIENT_DATA_CHANGED", "name", name.value);
   };
 
   return (
-    <Stack>
-      <TextInput error={isNameError ? "Name must be filled in" : ""} ref={nameInputRef} label="Name" />
-      <Button onClick={handleSaveName}>Save</Button>
-    </Stack>
+    <form onSubmit={handleSaveName} autoComplete={"off"}>
+      <Stack>
+        <TextInput
+          defaultValue={localName}
+          label="Name"
+          onInput={e => handleUpdateName((e.target as HTMLInputElement).value)}
+        />
+        <Button disabled={disabled} onClick={handleSaveName}>
+          Save
+        </Button>
+      </Stack>
+    </form>
   );
 };
 

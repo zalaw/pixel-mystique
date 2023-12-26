@@ -5,7 +5,7 @@ import cors from "cors";
 import { Server } from "socket.io";
 import crypto from "crypto";
 import { jojoCharacters, jojoStands } from "./data";
-import { generateRounds } from "./utils/general-utils";
+import { delayWithError, generateRounds } from "./utils/general-utils";
 import { RoomSettingsType, RoomType, SettingsValue } from "./types/RoomType";
 import { ClientType, ClientValue } from "./types/ClientType";
 import { RoundType } from "./types/RoundType";
@@ -26,51 +26,48 @@ const intervals = new Map<string, NodeJS.Timeout>();
 
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: "https://pixel-mystique.up.railway.app/",
     methods: ["GET"],
   },
 });
 
 io.on("connection", socket => {
-  socket.on("CREATE_ROOM", (name: string) => {
-    try {
-      const code = crypto.randomUUID();
-      const room: RoomType = {
-        code,
-        clients: [
-          {
-            id: socket.id,
-            index: 0,
-            name,
-            isHost: true,
-            isReady: false,
-            isAnswerPicked: false,
-          },
-        ],
-        status: "lobby",
-        settings: {
-          scenario: "jojoCharacters",
-          seconds: 10,
-          rounds: 4,
-          grayscale: true,
-          pixelatedValue: 50,
+  socket.on("CREATE_ROOM", (name: string, callback) => {
+    const code = crypto.randomUUID();
+    const room: RoomType = {
+      code,
+      clients: [
+        {
+          id: socket.id,
+          index: 0,
+          name,
+          isHost: true,
+          isReady: false,
+          isAnswerPicked: false,
         },
-        currentRoundIndex: 0,
-        rounds: [],
-      };
+      ],
+      status: "lobby",
+      settings: {
+        scenario: "jojoCharacters",
+        seconds: 10,
+        rounds: 4,
+        grayscale: true,
+        pixelatedValue: 50,
+      },
+      currentRoundIndex: 0,
+      rounds: [],
+    };
 
-      rooms.set(code, room);
-      socket.join(code);
+    rooms.set(code, room);
+    socket.join(code);
 
-      socket.emit("ROOM_CREATED", { code, name });
-    } catch (err) {
-      console.log("err in connection");
-      console.log(err);
-    }
+    callback({ code });
+    // socket.emit("ROOM_CREATED", { code, name });
   });
 
-  socket.on("JOIN_ROOM", (gameId: string, name: string) => {
-    const room = rooms.get(gameId);
+  socket.on("JOIN_ROOM", ({ code, name }: { code: string; name: string }) => {
+    console.log("JOIN ROOM", code);
+    const room = rooms.get(code);
 
     if (!room) return socket.emit("ROOM_NOT_JOINABLE", "Room does not exist");
     if (room.clients.length >= 8) return socket.emit("ROOM_NOT_JOINABLE", "Room is fool");
@@ -91,11 +88,11 @@ io.on("connection", socket => {
       },
     ];
 
-    socket.to(gameId).emit("CLIENT_JOINED", { id: socket.id, index, name });
+    socket.to(code).emit("CLIENT_JOINED", { id: socket.id, index, name });
 
-    socket.join(gameId);
+    socket.join(code);
 
-    socket.emit("ROOM_DATA", room);
+    socket.emit("ROOM_DATA", { room });
 
     if (!name) socket.emit("NAME_NOT_SET");
   });
@@ -144,7 +141,7 @@ io.on("connection", socket => {
     io.to(roomCode).emit("GAME_STARTING");
 
     try {
-      // await delayWithError(10000);
+      // await delayWithError(3000);
 
       room.rounds = await generateRounds(
         room.settings.pixelatedValue,
@@ -155,7 +152,7 @@ io.on("connection", socket => {
     } catch (err) {
       console.log(err);
       room.status = "lobby";
-      io.to(roomCode).emit("ERROR_");
+      io.to(roomCode).emit("ERROR_WHILE_STARTING");
 
       return;
     }
@@ -166,11 +163,9 @@ io.on("connection", socket => {
       originalImage: new ArrayBuffer(0),
     };
 
-    io.to(roomCode).emit("GAME_START", roundWithoutCorrectAnswerId);
+    io.to(roomCode).emit("GAME_START", { round: roundWithoutCorrectAnswerId });
 
     const interval = setInterval(() => {
-      console.log("interval run");
-
       if (room.currentRoundIndex >= room.settings.rounds - 1) {
         clearInterval(interval);
 
@@ -196,9 +191,9 @@ io.on("connection", socket => {
           correctAnswerId: "",
         };
 
-        io.to(roomCode).emit("NEXT_ROUND", roundWithoutCorrectAnswerId);
+        io.to(roomCode).emit("NEXT_ROUND", { round: roundWithoutCorrectAnswerId });
       }
-    }, room.settings.seconds * 1000);
+    }, (room.settings.seconds + 1) * 1000);
 
     intervals.set(roomCode, interval);
   });
@@ -280,7 +275,7 @@ io.on("connection", socket => {
     room.clients = room.clients.filter(client => client.id !== id);
 
     io.to(id).emit("ROOM_NOT_JOINABLE", "You got kicked");
-    io.to(roomCode).emit("CLIENT_DISCONNECTED", id);
+    io.to(roomCode).emit("CLIENT_DISCONNECTED", { clientId: id });
 
     const s = io.sockets.sockets.get(id);
 
@@ -306,7 +301,7 @@ io.on("connection", socket => {
       return;
     }
 
-    io.to(roomCode).emit("CLIENT_DISCONNECTED", socket.id);
+    io.to(roomCode).emit("CLIENT_DISCONNECTED", { clientId: socket.id });
 
     if (isHost) {
       room.clients[0].isHost = true;

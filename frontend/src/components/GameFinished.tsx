@@ -1,41 +1,47 @@
 import { Stack, Button } from "@mantine/core";
 import WrapperCard from "./WrapperCard";
-import { useGame } from "../hooks/useGame";
 import Round from "./Round";
-import { useSocket } from "../hooks/useSocket";
 import { ClientType, ClientValue } from "../types/ClientType";
+import { RoundType } from "../types/RoundType";
+import { socket } from "../socket";
+import { room } from "../App";
 
-const GameFinished = () => {
-  const { socket } = useSocket();
-  const { room, setRoom } = useGame();
+interface GameFinishedProps {
+  rounds: RoundType[];
+  clients: ClientType[];
+}
 
-  const client = room.clients.find(client => client.id === socket!.id);
-  const areAllClientsReady = room.clients.filter(client => !client.isHost).every(client => client.isReady);
+const GameFinished = ({ rounds, clients }: GameFinishedProps) => {
+  const client = clients.find(client => client.id === socket.id);
+  const areAllClientsReady = clients.filter(client => !client.isHost).every(client => client.isReady);
 
   const handleClientDataChanged = (key: keyof ClientType, value: ClientValue) => {
-    setRoom(curr => ({
-      ...curr,
-      clients: curr.clients.map(client => (client.id === socket!.id ? { ...client, [key]: value } : client)),
-    }));
-    socket?.emit("CLIENT_DATA_CHANGED", key, value);
+    room.value = {
+      ...room.value,
+      clients: room.value.clients.map(client => (client.id === socket.id ? { ...client, [key]: value } : client)),
+    };
+
+    socket.emit("CLIENT_DATA_CHANGED", key, value);
   };
 
   const handlePlayAgain = () => {
-    setRoom(curr => ({
-      ...curr,
+    room.value = {
+      ...room.value,
       status: "lobby",
       rounds: [],
       currentRoundIndex: 0,
-    }));
-    socket?.emit("PLAY_AGAIN");
+    };
+
+    socket.emit("PLAY_AGAIN");
   };
 
   return (
     <WrapperCard>
       <Stack gap={"4rem"}>
-        {room.rounds.map(round => (
-          <Round key={round.id} round={round} index={room.currentRoundIndex} status={room.status}></Round>
+        {rounds.map((round, index) => (
+          <Round key={round.id} round={round} currentIndex={index} roomStatus={"finished"}></Round>
         ))}
+
         {client?.isHost ? (
           <Button
             disabled={!areAllClientsReady}

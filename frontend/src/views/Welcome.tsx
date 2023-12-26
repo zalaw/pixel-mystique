@@ -1,77 +1,96 @@
-import { useState, useEffect, useRef } from "react";
-import { Stack, TextInput, Button } from "@mantine/core";
-import { useSocket } from "../hooks/useSocket";
-import { useGame } from "../hooks/useGame";
-import WrapperCard from "../components/WrapperCard";
-import { defaultState } from "../contexts/GameContext";
 import { useNavigate } from "react-router-dom";
+import { Stack, TextInput, Button, Text } from "@mantine/core";
+import { computed, signal } from "@preact/signals-react";
+
+import WrapperCard from "../components/WrapperCard";
+import { RECONNECTION_ATTEMPTS, socket } from "../socket";
+import { loading, name, room, roomDefaultState } from "../App";
+import { useEffect } from "react";
+
+type CreateRoomResponse = {
+  code: string;
+};
+
+const retries = signal<number>(0);
+const isSocketError = signal<boolean>(false);
+const disabled = computed<boolean>(() => name.value.trim() === "");
 
 const Welcome = () => {
-  const { socket } = useSocket();
-  const { setRoom, setGameNotJoinableMessage } = useGame();
-  const [isNameError, setIsNameError] = useState(false);
-  const nameInputRef = useRef<HTMLInputElement>(null);
-  const [loading, setLoading] = useState(false);
-
   const navigate = useNavigate();
 
-  const handleCreateGame = () => {
-    if (loading) return;
-    if (nameInputRef.current!.value.trim() === "") return setIsNameError(true);
-
-    setLoading(true);
-    socket?.connect();
-    socket?.emit("CREATE_ROOM", nameInputRef.current!.value);
-  };
-
-  const handleUpdateName = () => {
-    setIsNameError(false);
-    localStorage.setItem("BABAJEE_NAME", nameInputRef.current!.value.trim().slice(0, 32));
-  };
-
   useEffect(() => {
-    setRoom({ ...defaultState.room });
-    setGameNotJoinableMessage("");
-    const name = localStorage.getItem("BABAJEE_NAME") || "";
-    if (nameInputRef.current) nameInputRef.current.value = name;
+    room.value = roomDefaultState;
   }, []);
 
-  useEffect(() => {
-    if (!socket) return;
+  const handleCreateGame = (e?: React.FormEvent<HTMLFormElement | HTMLButtonElement>) => {
+    if (e) e.preventDefault();
+    if (loading.value || disabled.value) return;
 
-    socket?.on("ROOM_CREATED", ({ code, name }: { code: string; name: string }) => {
-      setRoom(curr => ({
-        ...curr,
-        code,
+    isSocketError.value = false;
+    loading.value = true;
+
+    socket.connect();
+
+    socket.emit("CREATE_ROOM", name.value, (response: CreateRoomResponse) => {
+      room.value = {
+        ...room.value,
+        code: response.code,
         clients: [
           {
             id: socket.id,
             index: 0,
-            name,
+            name: name.value,
             isHost: true,
             isReady: false,
             isAnswerPicked: false,
           },
         ],
-      }));
-      navigate(`/game/${code}`);
-      setLoading(false);
+      };
+
+      navigate(`/game/${response.code}`);
+
+      loading.value = false;
     });
-  }, [socket]);
+
+    socket.on("connect_error", () => {
+      retries.value++;
+
+      if (retries.value > RECONNECTION_ATTEMPTS) {
+        retries.value = 0;
+        loading.value = false;
+        isSocketError.value = true;
+
+        socket.removeListener("connect_error");
+      }
+    });
+  };
+
+  const handleUpdateName = (value: string) => {
+    name.value = value;
+    localStorage.setItem("BABAJEE_NAME", name.value);
+  };
 
   return (
     <WrapperCard>
-      <Stack>
-        <TextInput
-          error={isNameError ? "Name must be filled in" : ""}
-          ref={nameInputRef}
-          label="Name"
-          onBlur={handleUpdateName}
-        />
-        <Button loading={loading} onClick={handleCreateGame}>
-          Create game
-        </Button>
-      </Stack>
+      <form onSubmit={handleCreateGame} autoComplete={"off"}>
+        <Stack>
+          <TextInput
+            defaultValue={name.value}
+            label="Name"
+            onInput={e => handleUpdateName((e.target as HTMLInputElement).value)}
+          />
+
+          <Button disabled={disabled.value || loading.value} loading={loading.value} onClick={handleCreateGame}>
+            Create game
+          </Button>
+
+          {isSocketError.value ? (
+            <Text fz={"14px"} fw={500} c={"red"}>
+              Unable to connect to the server
+            </Text>
+          ) : null}
+        </Stack>
+      </form>
     </WrapperCard>
   );
 };

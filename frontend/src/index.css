@@ -19,6 +19,7 @@
 }
 
 .icon-top-center {
+  pointer-events: none;
   position: absolute;
   top: -0.5rem;
   left: 50%;
@@ -35,10 +36,6 @@
   background-color: #099268;
   border-radius: 50%;
   padding: 0.25rem;
-}
-
-.mantine-Modal-inner {
-  backdrop-filter: blur(10px);
 }
 
 .answer-clients {

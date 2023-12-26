@@ -41,12 +41,9 @@ export const generateRounds = async (
   const shuffled = shuffleArray(pool).slice(0, size);
   const rounds = await Promise.all(
     shuffled.map(async entry => {
-      console.log("here");
       // const originalImage = await Jimp.read(entry.imageURL);
       const image = await Jimp.read(entry.imageURL);
       const originaImageBuffer = await image.getBufferAsync(Jimp.MIME_JPEG);
-
-      console.log("here 2");
 
       image.pixelate(pixelatedValue);
 
@@ -69,8 +66,6 @@ export const generateRounds = async (
       return round;
     })
   );
-
-  console.log("done");
 
   return rounds;
 };

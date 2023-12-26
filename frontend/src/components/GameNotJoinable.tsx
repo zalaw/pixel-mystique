@@ -1,10 +1,13 @@
-import { Stack, Button } from "@mantine/core";
-import { useGame } from "../hooks/useGame";
 import { useNavigate } from "react-router-dom";
+import { Stack, Button } from "@mantine/core";
+
 import WrapperCard from "./WrapperCard";
 
-const GameNotJoinable = () => {
-  const { gameNotJoinableMessage } = useGame();
+interface GameNotJoinableProps {
+  message: string;
+}
+
+const GameNotJoinable = ({ message }: GameNotJoinableProps) => {
   const navigate = useNavigate();
 
   const handleGoBackHome = () => {
@@ -14,7 +17,7 @@ const GameNotJoinable = () => {
   return (
     <WrapperCard>
       <Stack>
-        {gameNotJoinableMessage}
+        {message}
         <Button onClick={handleGoBackHome}>Go back home</Button>
       </Stack>
     </WrapperCard>

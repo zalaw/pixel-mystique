@@ -1,97 +1,139 @@
-import { useEffect, useState } from "react";
-import { useGame } from "../hooks/useGame";
-import { Stack, Loader, Button, Flex } from "@mantine/core";
-import { useSocket } from "../hooks/useSocket";
+import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import GameNotJoinable from "../components/GameNotJoinable";
-import Clients from "../components/Clients";
-import LobbySettings from "../components/LobbySettings";
-import WrapperCard from "../components/WrapperCard";
-import Round from "../components/Round";
+import { Stack, Loader, Button, Flex, Modal, Text } from "@mantine/core";
 import { IconArrowNarrowLeft } from "@tabler/icons-react";
+import { signal } from "@preact/signals-react";
+
+import { gameNotJoinableMessage, loading, room, name } from "../App";
+import { RECONNECTION_ATTEMPTS, socket } from "../socket";
+import WrapperCard from "../components/WrapperCard";
+import Clients from "../components/Clients";
+import GameNotJoinable from "../components/GameNotJoinable";
+import UpdateName from "../components/UpdateName";
+import LobbySettings from "../components/LobbySettings";
+import Round from "../components/Round";
 import GameFinished from "../components/GameFinished";
-import { RoomType } from "../types/RoomType";
+// import GameFinished from "../components/GameFinished";
+// import GameNotJoinable from "../components/GameNotJoinable";
+
+const retries = signal<number>(0);
+const isSocketError = signal<boolean>(false);
 
 const Game = () => {
-  const { socket } = useSocket();
-  const { setRoom, room, gameNotJoinableMessage } = useGame();
-  const { gameId } = useParams();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const { code } = useParams();
 
   useEffect(() => {
-    if (!socket) return;
+    if (loading.value) return;
 
-    if (!room.clients.find(client => client.id === socket.id)) {
-      const name = localStorage.getItem("BABAJEE_NAME");
+    gameNotJoinableMessage.value = "";
 
-      setLoading(true);
+    if (room.value.code === "") {
+      loading.value = true;
+
       socket.connect();
-      socket.emit("JOIN_ROOM", gameId, name);
-    } else {
-      setLoading(false);
+      socket.emit("JOIN_ROOM", { code, name: localStorage.getItem("BABAJEE_NAME") });
     }
 
-    socket.on("ROOM_DATA", (room: RoomType) => {
-      setRoom(room);
-      setLoading(false);
-    });
+    socket.on("connect_error", () => {
+      retries.value++;
 
-    socket.on("ROOM_NOT_JOINABLE", () => {
-      // setGameNotJoinableMessage(message);
-      setLoading(false);
+      if (retries.value > RECONNECTION_ATTEMPTS) {
+        retries.value = 0;
+        loading.value = false;
+        isSocketError.value = true;
+
+        socket.removeListener("connect_error");
+      }
     });
-  }, [socket]);
+  }, [code]);
 
   const handleOnQuitClick = () => {
-    socket?.disconnect();
+    socket.disconnect();
     navigate("/");
   };
 
-  if (loading) return <Loader />;
+  if (loading.value)
+    return (
+      <Flex justify={"center"}>
+        <Loader />
+      </Flex>
+    );
+
+  if (isSocketError.value)
+    return (
+      <WrapperCard>
+        <Flex direction={"column"} gap={"1rem"}>
+          <Text fz={"14px"} fw={500} c={"red"}>
+            Unable to connect to the server
+          </Text>
+          <Button onClick={() => window.location.reload()}>Try again</Button>
+        </Flex>
+      </WrapperCard>
+    );
+
+  if (gameNotJoinableMessage.value !== "") return <GameNotJoinable message={gameNotJoinableMessage.value} />;
 
   return (
     <div>
-      {gameNotJoinableMessage === "" ? (
-        <Stack gap="2rem">
-          <WrapperCard transparent p={0}>
-            <Flex justify={"space-between"}>
-              <Button leftSection={<IconArrowNarrowLeft />} variant="outline" w={"6rem"} onClick={handleOnQuitClick}>
-                Quit
-              </Button>
-            </Flex>
-          </WrapperCard>
+      <Modal
+        size={"36rem"}
+        opened={name.value.trim() === ""}
+        onClose={() => {}}
+        closeOnClickOutside={false}
+        withCloseButton={false}
+        overlayProps={{
+          backgroundOpacity: 0.55,
+          blur: 8,
+        }}
+      >
+        <WrapperCard transparent>
+          <UpdateName />
+        </WrapperCard>
+      </Modal>
 
+      <Stack gap="2rem">
+        <WrapperCard transparent p={0}>
+          <Flex justify={"space-between"}>
+            <Button leftSection={<IconArrowNarrowLeft />} variant="outline" w={"6rem"} onClick={handleOnQuitClick}>
+              Quit
+            </Button>
+          </Flex>
+        </WrapperCard>
+
+        <WrapperCard>
+          <Clients clients={[...room.value.clients]} />
+        </WrapperCard>
+
+        {room.value.status === "lobby" && (
           <WrapperCard>
-            <Clients />
+            <LobbySettings currentClient={room.value.clients.find(client => client.id === socket.id)!} />
           </WrapperCard>
+        )}
 
-          {room.status === "lobby" && (
-            <WrapperCard>
-              <LobbySettings />
-            </WrapperCard>
-          )}
+        {room.value.status === "in-game" && (
+          <WrapperCard>
+            <Round
+              round={room.value.rounds[room.value.currentRoundIndex]}
+              currentIndex={room.value.currentRoundIndex}
+              totalRounds={room.value.settings.rounds}
+              roomStatus={room.value.status}
+              duration={room.value.settings.seconds}
+            />
+          </WrapperCard>
+        )}
 
-          {room.status === "in-game" && (
-            <WrapperCard>
-              <Round
-                round={room.rounds[room.currentRoundIndex]}
-                index={room.currentRoundIndex}
-                seconds={room.settings.seconds}
-                totalRounds={room.settings.rounds}
-              />
-            </WrapperCard>
-          )}
-
-          {room.status === "finished" && (
-            <WrapperCard>
-              <GameFinished />
-            </WrapperCard>
-          )}
-        </Stack>
-      ) : (
-        <GameNotJoinable />
-      )}
+        {room.value.status === "finished" && (
+          <WrapperCard>
+            {/* <Stack gap={"4rem"}>
+              {room.value.rounds.map((round, index) => (
+                <Round key={round.id} round={round} currentIndex={index} roomStatus={room.value.status} />
+              ))}
+            </Stack> */}
+            <GameFinished clients={room.value.clients} rounds={room.value.rounds} />
+          </WrapperCard>
+        )}
+      </Stack>
     </div>
   );
 };

@@ -1,112 +1,100 @@
-import { useState, useEffect } from "react";
-import { Flex, Select, Text, Slider, Chip, Button, Title, Stack, Modal, AspectRatio, NumberInput } from "@mantine/core";
-import { useGame } from "../hooks/useGame";
-import { useSocket } from "../hooks/useSocket";
+import { useEffect } from "react";
+import { Flex, Select, Text, Slider, Chip, Button, Title, Stack, AspectRatio, NumberInput } from "@mantine/core";
+import { signal } from "@preact/signals-react";
+
+import { socket } from "../socket";
+import { room } from "../App";
 import { ImagePixelated } from "./ImagePixelated";
-import Jojo from "../assets/jojo.jpg";
 import { RoomSettingsType, SettingsValue } from "../types/RoomType";
 import { ClientType, ClientValue } from "../types/ClientType";
-import UpdateName from "./UpdateName";
+import Jojo from "../assets/jojo.jpg";
 
-const LobbySettings = () => {
-  const { socket } = useSocket();
-  const { room, setRoom } = useGame();
+interface LobbySettingsProps {
+  currentClient: ClientType;
+}
 
-  const client = room.clients.find(client => client.id === socket!.id);
-  const areAllClientsReady = room.clients.filter(client => !client.isHost).every(client => client.isReady);
+const isError = signal<boolean>(false);
+const loading = signal<boolean>(false);
 
+const LobbySettings = ({ currentClient }: LobbySettingsProps) => {
+  const areAllClientsReady = room.value.clients.filter(client => !client.isHost).every(client => client.isReady);
   const scenarios = [
     { value: "jojoCharacters", label: "JoJo's Bizarre Adventure characters" },
     { value: "jojoStands", label: "JoJo's Bizarre Adventure stands" },
   ];
 
-  const [showUpdateNameModal, setShowUpdateNameModal] = useState(false);
-  const [isError, setIsError] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [settings, setSettings] = useState<RoomSettingsType>({
-    ...room.settings,
-  });
-
   useEffect(() => {
-    Object.entries(room.settings).forEach(entry => setSettings(curr => ({ ...curr, [entry[0]]: entry[1] })));
-  }, [room.settings]);
-
-  useEffect(() => {
-    socket?.on("NAME_NOT_SET", () => {
-      setShowUpdateNameModal(true);
+    socket.on("ERROR_WHILE_STARTING", () => {
+      isError.value = true;
+      loading.value = false;
     });
 
-    socket?.on("GAME_STARTING", () => {
-      setLoading(true);
-      setIsError(false);
-    });
-
-    socket?.on("ERROR_", () => {
-      setLoading(false);
-      setIsError(true);
+    socket.on("GAME_STARTING", () => {
+      loading.value = true;
     });
 
     return () => {
-      setLoading(false);
-      setIsError(false);
+      loading.value = false;
     };
   }, []);
 
   const handleGameSettingsChanged = (key: keyof RoomSettingsType, value: SettingsValue) => {
-    if (!client?.isHost) return;
+    if (!currentClient?.isHost) return;
 
-    setRoom(curr => ({
-      ...curr,
-      settings: { ...curr.settings, [key]: value },
-    }));
+    room.value = {
+      ...room.value,
+      settings: {
+        ...room.value.settings,
+        [key]: value,
+      },
+    };
 
-    socket?.emit("GAME_SETTINGS_CHANGED", key, value);
+    socket.emit("GAME_SETTINGS_CHANGED", key, value);
   };
 
   const handleClientDataChanged = (key: keyof ClientType, value: ClientValue) => {
-    setRoom(curr => ({
-      ...curr,
-      clients: curr.clients.map(client => (client.id === socket!.id ? { ...client, [key]: value } : client)),
-    }));
-    socket?.emit("CLIENT_DATA_CHANGED", key, value);
+    room.value = {
+      ...room.value,
+      clients: room.value.clients.map(client =>
+        client.id === currentClient?.id ? { ...client, [key]: value } : client
+      ),
+    };
+
+    socket.emit("CLIENT_DATA_CHANGED", key, value);
   };
 
   const handleStartOnClick = () => {
-    socket?.emit("GAME_START");
+    socket.emit("GAME_START");
   };
 
   return (
     <>
-      <Modal opened={showUpdateNameModal} onClose={() => {}} closeOnClickOutside={false} withCloseButton={false}>
-        <UpdateName callback={() => setShowUpdateNameModal(false)} />
-      </Modal>
-
       <Stack gap={"3rem"}>
         <Title>Lobby settings</Title>
 
-        {client?.isHost ? (
-          <Select
-            label="Scenario"
-            disabled={!client.isHost}
-            allowDeselect={false}
-            data={scenarios}
-            value={settings.scenario}
-            onChange={value => handleGameSettingsChanged("scenario", value)}
-          />
-        ) : (
-          <Flex gap={"1rem"}>
-            <Text fw={"bold"}>Scenario:</Text>
-            <Text>{scenarios.find(scenario => scenario.value === room.settings.scenario)?.label}</Text>
-          </Flex>
-        )}
+        <Select
+          readOnly={!currentClient?.isHost}
+          label="Scenario"
+          allowDeselect={false}
+          data={scenarios}
+          value={room.value.settings.scenario}
+          onChange={value => handleGameSettingsChanged("scenario", value)}
+          comboboxProps={{ shadow: "lg" }}
+        />
 
         <AspectRatio ratio={16 / 9}>
-          <ImagePixelated gray={settings.grayscale} src={Jojo} pixelSize={settings.pixelatedValue} centered={true} />
+          <ImagePixelated
+            gray={room.value.settings.grayscale}
+            src={Jojo}
+            pixelSize={room.value.settings.pixelatedValue}
+            centered={true}
+          />
         </AspectRatio>
 
         <Flex gap={"2rem"}>
           <NumberInput
-            value={settings.seconds}
+            readOnly={!currentClient?.isHost}
+            value={room.value.settings.seconds}
             onChange={value => handleGameSettingsChanged("seconds", value || 10)}
             w={"100%"}
             min={2}
@@ -114,7 +102,8 @@ const LobbySettings = () => {
             label={"Seconds"}
           />
           <NumberInput
-            value={settings.rounds}
+            readOnly={!currentClient?.isHost}
+            value={room.value.settings.rounds}
             onChange={value => handleGameSettingsChanged("rounds", value || 4)}
             w={"100%"}
             min={1}
@@ -123,11 +112,11 @@ const LobbySettings = () => {
           />
         </Flex>
 
-        {client?.isHost ? (
+        {currentClient?.isHost ? (
           <Flex align={"center"} gap={"2rem"}>
             <Chip
-              disabled={!client.isHost}
-              checked={settings.grayscale}
+              disabled={!currentClient?.isHost}
+              checked={room.value.settings.grayscale}
               onChange={value => handleGameSettingsChanged("grayscale", value)}
             >
               Gray
@@ -136,9 +125,10 @@ const LobbySettings = () => {
             <Flex direction={"column"} w={"100%"}>
               <Text>Pixelated value</Text>
               <Slider
-                defaultValue={settings.pixelatedValue}
-                disabled={!client.isHost}
-                className={!client.isHost ? "disabled" : ""}
+                aria-readonly={true}
+                defaultValue={room.value.settings.pixelatedValue}
+                disabled={!currentClient?.isHost}
+                className={!currentClient?.isHost ? "disabled" : ""}
                 w={"100%"}
                 marks={[
                   { value: 10, label: "10" },
@@ -156,17 +146,17 @@ const LobbySettings = () => {
         ) : null}
 
         <Stack>
-          {isError && (
+          {isError.value && (
             <Text size="sm" c={"red"}>
               Error while starting the game
             </Text>
           )}
           <Flex>
-            {client?.isHost ? (
+            {currentClient?.isHost ? (
               <Button
                 style={{ flexGrow: 1 }}
                 disabled={!areAllClientsReady}
-                loading={loading}
+                loading={loading.value}
                 onClick={handleStartOnClick}
               >
                 {areAllClientsReady ? "Start" : "All clients must be ready"}
@@ -174,12 +164,12 @@ const LobbySettings = () => {
             ) : (
               <Button
                 color="teal"
-                variant={client?.isReady ? "filled" : "default"}
+                variant={currentClient?.isReady ? "filled" : "default"}
                 style={{ flexGrow: 1 }}
-                loading={loading}
-                onClick={() => handleClientDataChanged("isReady", !client?.isReady)}
+                loading={loading.value}
+                onClick={() => handleClientDataChanged("isReady", !currentClient?.isReady)}
               >
-                {client?.isReady ? "I'm ready" : "I'm not ready"}
+                {currentClient?.isReady ? "I'm ready" : "I'm not ready"}
               </Button>
             )}
           </Flex>
