@@ -13,7 +13,7 @@ export const RECONNECTION_ATTEMPTS = 3;
 
 console.log(import.meta.env);
 
-export const socket = io(import.meta.env.PROD ? "https://pixel-mystique.up.railway.app/" : "http://localhost:3001", {
+export const socket = io(import.meta.env.PROD ? import.meta.env.VITE_RAILWAY_STATIC_URL : "http://localhost:3001", {
   autoConnect: false,
   reconnection: true,
   reconnectionDelay: RECONNECTION_DELAY,
