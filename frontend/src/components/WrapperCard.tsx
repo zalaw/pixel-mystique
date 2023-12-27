@@ -9,7 +9,7 @@ interface WrapperCardProps {
 
 const WrapperCard = ({ transparent = false, p = "3.5%", children }: WrapperCardProps) => {
   return (
-    <Card bg={transparent ? "transparent" : "#25262b"} p={p} w={"100%"} maw={"40rem"} m={"auto"}>
+    <Card bg={transparent ? "transparent" : ""} p={p} w={"100%"} maw={"40rem"} m={"auto"}>
       {children}
     </Card>
   );

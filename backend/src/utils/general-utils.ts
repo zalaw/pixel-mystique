@@ -35,17 +35,22 @@ export const getPossibleAnswers = (correctAnswer: string, pool: string[], size: 
 export const generateRounds = async (
   pixelatedValue: number,
   grayscale: boolean,
-  pool: { name: string; imageURL: string }[],
+  pool: { name: string; imageURLS: string[] }[],
   size: number = 10
 ): Promise<RoundType[]> => {
   const shuffled = shuffleArray(pool).slice(0, size);
   const rounds = await Promise.all(
     shuffled.map(async entry => {
-      // const originalImage = await Jimp.read(entry.imageURL);
-      const image = await Jimp.read(entry.imageURL);
+      const image = await Jimp.read(entry.imageURLS[Math.floor(Math.random() * entry.imageURLS.length)]);
       const originaImageBuffer = await image.getBufferAsync(Jimp.MIME_JPEG);
 
-      image.pixelate(pixelatedValue);
+      image.resize(Jimp.AUTO, 500);
+      image.pixelate((pixelatedValue * image.bitmap.width) / 1000);
+
+      console.log(image.bitmap.width);
+      console.log(image.bitmap.height);
+      console.log("pixelated", (pixelatedValue * image.bitmap.width) / 1000);
+      console.log("\n");
 
       if (grayscale) image.grayscale();
 

@@ -10,6 +10,9 @@ import { RoomSettingsType, RoomType, SettingsValue } from "./types/RoomType";
 import { ClientType, ClientValue } from "./types/ClientType";
 import { RoundType } from "./types/RoundType";
 import path from "path";
+import { getData } from "./utils/puppeteer-utils";
+import fs from "node:fs";
+import { getList } from "./utils/openai-utils";
 
 config();
 
@@ -26,7 +29,7 @@ const intervals = new Map<string, NodeJS.Timeout>();
 
 const io = new Server(server, {
   cors: {
-    origin: "https://pixel-mystique.up.railway.app/",
+    origin: process.env.NODE_ENV === "production" ? "https://pixel-mystique.up.railway.app/" : "*",
     methods: ["GET"],
   },
 });
@@ -320,8 +323,9 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
+
   rooms.clear();
   intervals.clear();
 });

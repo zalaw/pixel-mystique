@@ -9,6 +9,7 @@ import Game from "./views/Game";
 import NotFound from "./views/NotFound";
 
 import { RoomType } from "./types/RoomType";
+import Test from "./views/Test";
 
 export const roomDefaultState: RoomType = {
   code: "",
@@ -46,6 +47,7 @@ function App() {
       <Route path="/" element={<Main />}>
         <Route index element={<Welcome />} />
         <Route path={`/game/:code`} element={<Game />} />
+        <Route path={"/test"} element={<Test />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

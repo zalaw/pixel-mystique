@@ -1,5 +1,5 @@
 import { RoundType } from "../types/RoundType";
-import { Button, Flex, Image, SimpleGrid, Stack } from "@mantine/core";
+import { Box, Button, Flex, Image, SimpleGrid, Stack, Tooltip } from "@mantine/core";
 import { socket } from "../socket";
 import { signal } from "@preact/signals-react";
 import { colors } from "../App";
@@ -40,15 +40,18 @@ const Round = ({ round, currentIndex, totalRounds, duration, roomStatus }: Round
         <RoundHeader duration={duration || 0} currentIndex={currentIndex} totalRounds={totalRounds || 0} />
       ) : null}
 
-      {roomStatus === "in-game" ? (
-        <Image m={"auto"} src={URL.createObjectURL(new Blob([round.image]))} />
-      ) : (
-        <ReactCompareSlider
-          onlyHandleDraggable={true}
-          itemOne={<ReactCompareSliderImage src={URL.createObjectURL(new Blob([round.image]))} />}
-          itemTwo={<ReactCompareSliderImage src={URL.createObjectURL(new Blob([round.originalImage]))} />}
-        />
-      )}
+      <Box h={500} pos={"relative"} className="aici">
+        {roomStatus === "in-game" ? (
+          <Image m={"auto"} src={URL.createObjectURL(new Blob([round.image]))} />
+        ) : (
+          <ReactCompareSlider
+            style={{ height: "500px" }}
+            onlyHandleDraggable={true}
+            itemOne={<ReactCompareSliderImage src={URL.createObjectURL(new Blob([round.image]))} />}
+            itemTwo={<ReactCompareSliderImage src={URL.createObjectURL(new Blob([round.originalImage]))} />}
+          />
+        )}
+      </Box>
 
       <SimpleGrid cols={{ base: 1, xs: 1, sm: 2, md: 2, lg: 2 }} w={"100%"}>
         {round.answers.map(answer => (
@@ -64,7 +67,9 @@ const Round = ({ round, currentIndex, totalRounds, duration, roomStatus }: Round
             {answer.pickedBy.length > 0 ? (
               <Flex className="answer-clients" gap={".25rem"}>
                 {answer.pickedBy.map(client => (
-                  <div key={client.id} style={{ backgroundColor: colors.value[client.index] }} className="circle"></div>
+                  <Tooltip key={client.id} label={client.name} events={{ hover: true, focus: true, touch: true }}>
+                    <div style={{ backgroundColor: colors.value[client.index] }} className="circle"></div>
+                  </Tooltip>
                 ))}
               </Flex>
             ) : null}

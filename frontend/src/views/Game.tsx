@@ -13,8 +13,6 @@ import UpdateName from "../components/UpdateName";
 import LobbySettings from "../components/LobbySettings";
 import Round from "../components/Round";
 import GameFinished from "../components/GameFinished";
-// import GameFinished from "../components/GameFinished";
-// import GameNotJoinable from "../components/GameNotJoinable";
 
 const retries = signal<number>(0);
 const isSocketError = signal<boolean>(false);
@@ -125,11 +123,6 @@ const Game = () => {
 
         {room.value.status === "finished" && (
           <WrapperCard>
-            {/* <Stack gap={"4rem"}>
-              {room.value.rounds.map((round, index) => (
-                <Round key={round.id} round={round} currentIndex={index} roomStatus={room.value.status} />
-              ))}
-            </Stack> */}
             <GameFinished clients={room.value.clients} rounds={room.value.rounds} />
           </WrapperCard>
         )}

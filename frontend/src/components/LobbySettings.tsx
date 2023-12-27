@@ -107,7 +107,7 @@ const LobbySettings = ({ currentClient }: LobbySettingsProps) => {
             onChange={value => handleGameSettingsChanged("rounds", value || 4)}
             w={"100%"}
             min={1}
-            max={10}
+            max={20}
             label={"Rounds"}
           />
         </Flex>

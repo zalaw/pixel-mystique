@@ -19,6 +19,7 @@ const Welcome = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log(process.env.RAILWAY_PUBLIC_DOMAIN);
     room.value = roomDefaultState;
   }, []);
 
