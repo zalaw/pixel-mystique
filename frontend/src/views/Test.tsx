@@ -1,4 +1,3 @@
-import React from "react";
 import CountdownTest from "../components/CountdownTest";
 
 const Test = () => {

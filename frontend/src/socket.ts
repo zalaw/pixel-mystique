@@ -11,16 +11,13 @@ const RECONNECTION_DELAY = 500;
 const RECONNECTION_DELAY_MAX = 1500;
 export const RECONNECTION_ATTEMPTS = 3;
 
-export const socket = io(
-  process.env.NODE_ENV === "production" ? process.env.RAILWAY_PUBLIC_DOMAIN || "" : "http://localhost:3001",
-  {
-    autoConnect: false,
-    reconnection: true,
-    reconnectionDelay: RECONNECTION_DELAY,
-    reconnectionDelayMax: RECONNECTION_DELAY_MAX,
-    reconnectionAttempts: RECONNECTION_ATTEMPTS,
-  }
-);
+export const socket = io("https://pixel-mystique.up.railway.app/", {
+  autoConnect: false,
+  reconnection: true,
+  reconnectionDelay: RECONNECTION_DELAY,
+  reconnectionDelayMax: RECONNECTION_DELAY_MAX,
+  reconnectionAttempts: RECONNECTION_ATTEMPTS,
+});
 
 socket.on("ROOM_NOT_JOINABLE", message => {
   socket.disconnect();
