@@ -47,11 +47,6 @@ export const generateRounds = async (
       image.resize(Jimp.AUTO, 500);
       image.pixelate((pixelatedValue * image.bitmap.width) / 1000);
 
-      console.log(image.bitmap.width);
-      console.log(image.bitmap.height);
-      console.log("pixelated", (pixelatedValue * image.bitmap.width) / 1000);
-      console.log("\n");
-
       if (grayscale) image.grayscale();
 
       const round: RoundType = {

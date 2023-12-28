@@ -69,7 +69,6 @@ io.on("connection", socket => {
   });
 
   socket.on("JOIN_ROOM", ({ code, name }: { code: string; name: string }) => {
-    console.log("JOIN ROOM", code);
     const room = rooms.get(code);
 
     if (!room) return socket.emit("ROOM_NOT_JOINABLE", "Room does not exist");
