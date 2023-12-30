@@ -12,11 +12,12 @@ import { RoomType } from "./types/RoomType";
 import Test from "./views/Test";
 
 export const roomDefaultState: RoomType = {
+  scenarios: [],
   code: "",
   clients: [],
   status: "lobby",
   settings: {
-    scenario: "jojoCharacters",
+    scenario: "",
     seconds: 10,
     rounds: 4,
     grayscale: true,

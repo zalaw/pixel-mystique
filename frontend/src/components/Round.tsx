@@ -37,7 +37,12 @@ const Round = ({ round, currentIndex, totalRounds, duration, roomStatus }: Round
       <div style={{ display: "none" }}>{answerPickedId.value}</div>
 
       {roomStatus === "in-game" ? (
-        <RoundHeader duration={duration || 0} currentIndex={currentIndex} totalRounds={totalRounds || 0} />
+        <RoundHeader
+          key={currentIndex}
+          duration={duration || 0}
+          currentIndex={currentIndex}
+          totalRounds={totalRounds || 0}
+        />
       ) : null}
 
       <Box h={500} pos={"relative"} className="aici">

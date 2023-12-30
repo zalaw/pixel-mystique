@@ -6,8 +6,10 @@ import WrapperCard from "../components/WrapperCard";
 import { RECONNECTION_ATTEMPTS, socket } from "../socket";
 import { loading, name, room, roomDefaultState } from "../App";
 import { useEffect } from "react";
+import { ScenarioType } from "../types/ScenarioType";
 
 type CreateRoomResponse = {
+  scenarios: ScenarioType[];
   code: string;
 };
 
@@ -34,7 +36,12 @@ const Welcome = () => {
     socket.emit("CREATE_ROOM", name.value, (response: CreateRoomResponse) => {
       room.value = {
         ...room.value,
+        scenarios: response.scenarios,
         code: response.code,
+        settings: {
+          ...room.value.settings,
+          scenario: response.scenarios[0].id || "",
+        },
         clients: [
           {
             id: socket.id,
