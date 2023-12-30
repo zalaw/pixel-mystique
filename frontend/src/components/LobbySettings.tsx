@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-// import { Flex, Select, Text, Slider, Chip, Button, Title, Stack, AspectRatio, NumberInput, Modal } from "@mantine/core";
 import { Flex, Select, Text, Slider, Chip, Button, Title, Stack, AspectRatio, NumberInput } from "@mantine/core";
 import { signal } from "@preact/signals-react";
 
@@ -9,8 +8,6 @@ import { ImagePixelated } from "./ImagePixelated";
 import { RoomSettingsType, SettingsValue } from "../types/RoomType";
 import { ClientType, ClientValue } from "../types/ClientType";
 import Jojo from "../assets/jojo.jpg";
-// import WrapperCard from "./WrapperCard";
-// import CreateScenario from "./CreateScenario";
 
 interface LobbySettingsProps {
   currentClient: ClientType;
@@ -18,10 +15,13 @@ interface LobbySettingsProps {
 
 const isError = signal<boolean>(false);
 const loading = signal<boolean>(false);
-// const createScenarioModalOpened = signal<boolean>(false);
 
 const LobbySettings = ({ currentClient }: LobbySettingsProps) => {
   const areAllClientsReady = room.value.clients.filter(client => !client.isHost).every(client => client.isReady);
+  const scenarios = [
+    { value: "jojoCharacters", label: "JoJo's Bizarre Adventure characters" },
+    { value: "jojoStands", label: "JoJo's Bizarre Adventure stands" },
+  ];
 
   useEffect(() => {
     socket.on("ERROR_WHILE_STARTING", () => {
@@ -69,40 +69,18 @@ const LobbySettings = ({ currentClient }: LobbySettingsProps) => {
 
   return (
     <>
-      {/* <Modal
-        size={"36rem"}
-        opened={createScenarioModalOpened.value}
-        onClose={() => (createScenarioModalOpened.value = false)}
-        withCloseButton={true}
-        overlayProps={{
-          backgroundOpacity: 0.55,
-          blur: 8,
-        }}
-      >
-        <WrapperCard transparent>
-          <CreateScenario />
-        </WrapperCard>
-      </Modal> */}
-
       <Stack gap={"3rem"}>
         <Title>Lobby settings</Title>
 
-        <Flex align={"flex-end"} gap={"1rem"} w={"100%"}>
-          <Select
-            w={"100%"}
-            readOnly={!currentClient?.isHost}
-            label="Scenario"
-            allowDeselect={false}
-            data={room.value.scenarios.map(scenario => ({ value: scenario.id || "", label: scenario.name }))}
-            value={room.value.settings.scenario}
-            onChange={value => handleGameSettingsChanged("scenario", value)}
-            comboboxProps={{ shadow: "lg" }}
-          />
-
-          {/* {currentClient?.isHost ? (
-            <Button onClick={() => (createScenarioModalOpened.value = true)}>Create scenario</Button>
-          ) : null} */}
-        </Flex>
+        <Select
+          readOnly={!currentClient?.isHost}
+          label="Scenario"
+          allowDeselect={false}
+          data={scenarios}
+          value={room.value.settings.scenario}
+          onChange={value => handleGameSettingsChanged("scenario", value)}
+          comboboxProps={{ shadow: "lg" }}
+        />
 
         <AspectRatio ratio={16 / 9}>
           <ImagePixelated

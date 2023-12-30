@@ -13,8 +13,6 @@ import path from "path";
 import { getData } from "./utils/puppeteer-utils";
 import fs from "node:fs";
 import { getList } from "./utils/openai-utils";
-import { db } from "./firebase";
-import { ScenarioType } from "./types/ScenarioType";
 
 config();
 
@@ -37,47 +35,36 @@ const io = new Server(server, {
 });
 
 io.on("connection", socket => {
-  socket.on("CREATE_ROOM", async (name: string, callback) => {
-    try {
-      const scenarios: ScenarioType[] = [];
-      const scenariosSnapshot = await db.collection("scenarios").get();
-
-      scenariosSnapshot.forEach(doc => scenarios.push({ id: doc.id, ...doc.data() } as ScenarioType));
-
-      const code = crypto.randomUUID();
-      const room: RoomType = {
-        scenarios,
-        code,
-        clients: [
-          {
-            id: socket.id,
-            index: 0,
-            name,
-            isHost: true,
-            isReady: false,
-            isAnswerPicked: false,
-          },
-        ],
-        status: "lobby",
-        settings: {
-          scenario: scenarios[0].id || "",
-          seconds: 10,
-          rounds: 4,
-          grayscale: true,
-          pixelatedValue: 50,
+  socket.on("CREATE_ROOM", (name: string, callback) => {
+    const code = crypto.randomUUID();
+    const room: RoomType = {
+      code,
+      clients: [
+        {
+          id: socket.id,
+          index: 0,
+          name,
+          isHost: true,
+          isReady: false,
+          isAnswerPicked: false,
         },
-        currentRoundIndex: 0,
-        rounds: [],
-      };
+      ],
+      status: "lobby",
+      settings: {
+        scenario: "jojoCharacters",
+        seconds: 10,
+        rounds: 4,
+        grayscale: true,
+        pixelatedValue: 50,
+      },
+      currentRoundIndex: 0,
+      rounds: [],
+    };
 
-      rooms.set(code, room);
-      socket.join(code);
+    rooms.set(code, room);
+    socket.join(code);
 
-      callback({ scenarios, code });
-    } catch (err) {
-      console.log(err);
-    }
-
+    callback({ code });
     // socket.emit("ROOM_CREATED", { code, name });
   });
 
@@ -323,15 +310,6 @@ io.on("connection", socket => {
       room.clients[0].isReady = false;
 
       socket.to(roomCode).emit("CLIENT_DATA_CHANGED", [[room.clients[0].id, "isHost", true, "isReady", false]]);
-    }
-  });
-
-  socket.on("TEST", async data => {
-    try {
-      // console.log(scenario);
-      // socket.emit("TEST", scenario);
-    } catch (err) {
-      console.log(err);
     }
   });
 });

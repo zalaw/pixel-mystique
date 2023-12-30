@@ -117,7 +117,3 @@ socket.on("PLAY_AGAIN", () => {
 socket.on("CLIENT_DISCONNECTED", ({ clientId }: { clientId: string }) => {
   room.value = { ...room.value, clients: room.value.clients.filter(client => client.id !== clientId) };
 });
-
-socket.on("TEST", data => {
-  console.log("received this from server", data);
-});

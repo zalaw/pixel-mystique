@@ -24,11 +24,9 @@ const RoundHeader = ({ currentIndex, totalRounds, duration }: RoundHeaderProps) 
   };
 
   useEffect(() => {
-    interval.stop();
-    interval.start();
-
     setSeconds(duration);
 
+    interval.stop();
     interval.start();
   }, [currentIndex]);
 
