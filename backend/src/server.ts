@@ -10,7 +10,6 @@ import { ClientType, ClientValue } from "./types/ClientType";
 import { RoundType } from "./types/RoundType";
 import path from "path";
 import { getData } from "./utils/puppeteer-utils";
-import fs from "node:fs";
 import { getList } from "./utils/openai-utils";
 import { db } from "./firebase";
 import { ScenarioType } from "./types/ScenarioType";
