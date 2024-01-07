@@ -22,7 +22,7 @@ const getImageURLS = async (browser: Browser, item: string) => {
   }
 };
 
-export const getData = async (list: string[], extra: string) => {
+export const getData = async (list: string[], extra?: string) => {
   const browser = await puppeteer.launch({
     headless: "new",
   });

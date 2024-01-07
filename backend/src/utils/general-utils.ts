@@ -3,6 +3,43 @@ import { AnswerType } from "../types/AnswerType";
 import crypto from "crypto";
 import Jimp from "jimp";
 
+const explicitKeywords = [
+  "porn",
+  "pornstar",
+  "adult content",
+  "explicit",
+  "xxx",
+  "nsfw",
+  "sex",
+  "nude",
+  "erotic",
+  "intimate",
+  "sensual",
+  "nudity",
+  "obscene",
+  "vulgar",
+  "sexual",
+  "kinky",
+  "fetish",
+  "hardcore",
+  "x-rated",
+  "uncensored",
+  "lust",
+  "pleasure",
+  "seduce",
+  "intimacy",
+  "naughty",
+  "erogenous",
+  "desire",
+  "passion",
+];
+
+export const containsExplicitContent = (input: string) => {
+  const sanitized = input.toLocaleLowerCase();
+
+  return explicitKeywords.some(keyword => sanitized.includes(keyword));
+};
+
 export const delayWithError = (time: number = 1000) => {
   return new Promise((res, rej) => {
     setTimeout(() => {

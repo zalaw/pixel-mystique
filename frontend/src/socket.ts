@@ -4,6 +4,7 @@ import { loading } from "./App";
 import { RoomSettingsType, RoomType } from "./types/RoomType";
 import { ClientType } from "./types/ClientType";
 import { RoundType } from "./types/RoundType";
+import { ScenarioType } from "./types/ScenarioType";
 
 type ClientValue = boolean | string;
 
@@ -111,6 +112,17 @@ socket.on("PLAY_AGAIN", () => {
     status: "lobby",
     rounds: [],
     currentRoundIndex: 0,
+  };
+});
+
+socket.on("SCENARIO", ({ scenario }: { scenario: ScenarioType }) => {
+  room.value = {
+    ...room.value,
+    scenarios: [scenario, ...room.value.scenarios],
+    settings: {
+      ...room.value.settings,
+      scenario: scenario.value,
+    },
   };
 });
 

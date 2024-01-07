@@ -9,16 +9,13 @@ export const getList = async (query: string, size: number = 20) => {
     messages: [
       {
         role: "user",
-        content: `Give me a list of ${size} ${query}. Your response should only contain the list`,
+        content: `Give me a list of ${size} ${query}. Each item should be inside '<item>...</item>' tags.`,
       },
     ],
     model: "gpt-3.5-turbo",
   });
 
-  return (
-    chatCompletion.choices[0].message.content
-      ?.split(/\d+\./)
-      .map(entry => entry.trim())
-      .filter(entry => entry) || []
-  );
+  const regex = /<item>(.*?)<\/item>/g;
+
+  return Array.from((chatCompletion.choices[0].message.content || "").matchAll(regex), match => match[1]);
 };

@@ -99,7 +99,7 @@ const Game = () => {
           </Flex>
         </WrapperCard>
 
-        <WrapperCard>
+        <WrapperCard style={{ position: "sticky", top: 0, zIndex: 2 }}>
           <Clients clients={[...room.value.clients]} />
         </WrapperCard>
 

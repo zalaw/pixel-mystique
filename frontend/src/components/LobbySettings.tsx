@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Flex, Select, Text, Slider, Chip, Button, Title, Stack, AspectRatio, NumberInput } from "@mantine/core";
+import { Flex, Select, Text, Slider, Chip, Button, Title, Stack, AspectRatio, NumberInput, Modal } from "@mantine/core";
 import { signal } from "@preact/signals-react";
 
 import { socket } from "../socket";
@@ -7,7 +7,9 @@ import { room } from "../App";
 import { ImagePixelated } from "./ImagePixelated";
 import { RoomSettingsType, SettingsValue } from "../types/RoomType";
 import { ClientType, ClientValue } from "../types/ClientType";
-import Jojo from "../assets/jojo.jpg";
+import Heavy from "../assets/heavy.png";
+import CreateScenarioModal from "./CreateScenarioModal";
+import WrapperCard from "./WrapperCard";
 
 interface LobbySettingsProps {
   currentClient: ClientType;
@@ -15,13 +17,10 @@ interface LobbySettingsProps {
 
 const isError = signal<boolean>(false);
 const loading = signal<boolean>(false);
+export const showCreateScenarioModal = signal<boolean>(false);
 
 const LobbySettings = ({ currentClient }: LobbySettingsProps) => {
   const areAllClientsReady = room.value.clients.filter(client => !client.isHost).every(client => client.isReady);
-  const scenarios = [
-    { value: "jojoCharacters", label: "JoJo's Bizarre Adventure characters" },
-    { value: "jojoStands", label: "JoJo's Bizarre Adventure stands" },
-  ];
 
   useEffect(() => {
     socket.on("ERROR_WHILE_STARTING", () => {
@@ -69,29 +68,55 @@ const LobbySettings = ({ currentClient }: LobbySettingsProps) => {
 
   return (
     <>
+      <Modal
+        size={"36rem"}
+        title={"Create scenario"}
+        opened={showCreateScenarioModal.value}
+        onClose={() => (showCreateScenarioModal.value = false)}
+        closeOnClickOutside={false}
+        overlayProps={{
+          backgroundOpacity: 0.55,
+          blur: 8,
+        }}
+        centered
+      >
+        <WrapperCard transparent>
+          <CreateScenarioModal />
+        </WrapperCard>
+      </Modal>
+
       <Stack gap={"3rem"}>
         <Title>Lobby settings</Title>
 
-        <Select
-          readOnly={!currentClient?.isHost}
-          label="Scenario"
-          allowDeselect={false}
-          data={scenarios}
-          value={room.value.settings.scenario}
-          onChange={value => handleGameSettingsChanged("scenario", value)}
-          comboboxProps={{ shadow: "lg" }}
-        />
+        <Stack>
+          <Select
+            w={"100%"}
+            readOnly={!currentClient?.isHost}
+            label="Scenario"
+            allowDeselect={false}
+            data={room.value.scenarios}
+            value={room.value.settings.scenario}
+            onChange={value => handleGameSettingsChanged("scenario", value)}
+            comboboxProps={{ shadow: "lg" }}
+          />
+          {currentClient?.isHost ? (
+            <>
+              <Text ta={"center"}>or</Text>
+              <Button onClick={() => (showCreateScenarioModal.value = true)}>Create Scenario</Button>
+            </>
+          ) : null}
+        </Stack>
 
         <AspectRatio ratio={16 / 9}>
           <ImagePixelated
             gray={room.value.settings.grayscale}
-            src={Jojo}
+            src={Heavy}
             pixelSize={room.value.settings.pixelatedValue}
             centered={true}
           />
         </AspectRatio>
 
-        <Flex gap={"2rem"}>
+        <Flex gap={"1rem"}>
           <NumberInput
             readOnly={!currentClient?.isHost}
             value={room.value.settings.seconds}
@@ -113,7 +138,7 @@ const LobbySettings = ({ currentClient }: LobbySettingsProps) => {
         </Flex>
 
         {currentClient?.isHost ? (
-          <Flex align={"center"} gap={"2rem"}>
+          <Flex wrap={"wrap"} align={"center"} gap={"1rem"}>
             <Chip
               disabled={!currentClient?.isHost}
               checked={room.value.settings.grayscale}
@@ -169,7 +194,7 @@ const LobbySettings = ({ currentClient }: LobbySettingsProps) => {
                 loading={loading.value}
                 onClick={() => handleClientDataChanged("isReady", !currentClient?.isReady)}
               >
-                {currentClient?.isReady ? "I'm ready" : "I'm not ready"}
+                I'm ready
               </Button>
             )}
           </Flex>

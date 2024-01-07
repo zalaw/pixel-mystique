@@ -1,5 +1,6 @@
 import { ClientType } from "./ClientType";
 import { RoundType } from "./RoundType";
+import { ScenarioType } from "./ScenarioType";
 
 export type SettingsValue = null | boolean | string | number;
 export type RoomStatusType = "lobby" | "in-game" | "finished";
@@ -14,6 +15,7 @@ export type RoomSettingsType = {
 
 export type RoomType = {
   code: string;
+  scenarios: ScenarioType[];
   clients: ClientType[];
   status: RoomStatusType;
   settings: RoomSettingsType;

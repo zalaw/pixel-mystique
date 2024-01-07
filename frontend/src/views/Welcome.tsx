@@ -6,9 +6,11 @@ import WrapperCard from "../components/WrapperCard";
 import { RECONNECTION_ATTEMPTS, socket } from "../socket";
 import { loading, name, room, roomDefaultState } from "../App";
 import { useEffect } from "react";
+import { ScenarioType } from "../types/ScenarioType";
 
 type CreateRoomResponse = {
   code: string;
+  scenarios: ScenarioType[];
 };
 
 const retries = signal<number>(0);
@@ -35,6 +37,11 @@ const Welcome = () => {
       room.value = {
         ...room.value,
         code: response.code,
+        scenarios: response.scenarios,
+        settings: {
+          ...room.value.settings,
+          scenario: response.scenarios[0].value,
+        },
         clients: [
           {
             id: socket.id,

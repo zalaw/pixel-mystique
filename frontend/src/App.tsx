@@ -1,5 +1,3 @@
-import "@mantine/core/styles.css";
-
 import { signal } from "@preact/signals-react";
 import { Routes, Route } from "react-router-dom";
 
@@ -13,10 +11,11 @@ import Test from "./views/Test";
 
 export const roomDefaultState: RoomType = {
   code: "",
+  scenarios: [],
   clients: [],
   status: "lobby",
   settings: {
-    scenario: "jojoCharacters",
+    scenario: "",
     seconds: 10,
     rounds: 4,
     grayscale: true,

@@ -45,7 +45,7 @@ const Clients = ({ clients }: ClientsProps) => {
   };
 
   return (
-    <SimpleGrid cols={{ base: 4, xs: 4, sm: 8, md: 8, lg: 8 }} w={"fit-content"} m="auto">
+    <SimpleGrid spacing={"xs"} cols={{ base: 4, xs: 4, sm: 8, md: 8, lg: 8 }} w={"fit-content"} m="auto">
       {clients.map((client, index) => (
         <div key={client.id || index} className="client-container">
           <Menu shadow="md" width={150}>

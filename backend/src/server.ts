@@ -4,8 +4,7 @@ import { createServer } from "http";
 import cors from "cors";
 import { Server } from "socket.io";
 import crypto from "crypto";
-import { jojoCharacters, jojoStands } from "./data";
-import { delayWithError, generateRounds } from "./utils/general-utils";
+import { containsExplicitContent, delayWithError, generateRounds } from "./utils/general-utils";
 import { RoomSettingsType, RoomType, SettingsValue } from "./types/RoomType";
 import { ClientType, ClientValue } from "./types/ClientType";
 import { RoundType } from "./types/RoundType";
@@ -13,6 +12,8 @@ import path from "path";
 import { getData } from "./utils/puppeteer-utils";
 import fs from "node:fs";
 import { getList } from "./utils/openai-utils";
+import { db } from "./firebase";
+import { ScenarioType } from "./types/ScenarioType";
 
 config();
 
@@ -35,37 +36,44 @@ const io = new Server(server, {
 });
 
 io.on("connection", socket => {
-  socket.on("CREATE_ROOM", (name: string, callback) => {
-    const code = crypto.randomUUID();
-    const room: RoomType = {
-      code,
-      clients: [
-        {
-          id: socket.id,
-          index: 0,
-          name,
-          isHost: true,
-          isReady: false,
-          isAnswerPicked: false,
+  socket.on("CREATE_ROOM", async (name: string, callback) => {
+    try {
+      const scenariosSnaphot = await db.collection("scenarios").get();
+      const scenarios = scenariosSnaphot.docs.map(doc => ({ value: doc.id, label: doc.data().name }));
+      const code = crypto.randomUUID();
+      const room: RoomType = {
+        code,
+        scenarios,
+        clients: [
+          {
+            id: socket.id,
+            index: 0,
+            name,
+            isHost: true,
+            isReady: false,
+            isAnswerPicked: false,
+          },
+        ],
+
+        status: "lobby",
+        settings: {
+          scenario: scenarios[0].value,
+          seconds: 10,
+          rounds: 4,
+          grayscale: true,
+          pixelatedValue: 50,
         },
-      ],
-      status: "lobby",
-      settings: {
-        scenario: "jojoCharacters",
-        seconds: 10,
-        rounds: 4,
-        grayscale: true,
-        pixelatedValue: 50,
-      },
-      currentRoundIndex: 0,
-      rounds: [],
-    };
+        currentRoundIndex: 0,
+        rounds: [],
+      };
 
-    rooms.set(code, room);
-    socket.join(code);
+      rooms.set(code, room);
+      socket.join(code);
 
-    callback({ code });
-    // socket.emit("ROOM_CREATED", { code, name });
+      callback({ code, scenarios });
+    } catch (err) {
+      console.log(err);
+    }
   });
 
   socket.on("JOIN_ROOM", ({ code, name }: { code: string; name: string }) => {
@@ -145,10 +153,14 @@ io.on("connection", socket => {
     try {
       // await delayWithError(3000);
 
+      const scenario = await db.collection("scenarios").doc(room.settings.scenario).get();
+
+      if (!scenario) await delayWithError(1);
+
       room.rounds = await generateRounds(
         room.settings.pixelatedValue,
         room.settings.grayscale,
-        room.settings.scenario === "jojoCharacters" ? jojoCharacters : jojoStands,
+        scenario.data()?.data,
         room.settings.rounds
       );
     } catch (err) {
@@ -310,6 +322,45 @@ io.on("connection", socket => {
       room.clients[0].isReady = false;
 
       socket.to(roomCode).emit("CLIENT_DATA_CHANGED", [[room.clients[0].id, "isHost", true, "isReady", false]]);
+    }
+  });
+
+  socket.on("GENERATE_LIST", async ({ prompt }: { prompt: string }, callback) => {
+    if (containsExplicitContent(prompt)) return callback("Explicit content is not allowed");
+
+    const list = await getList(prompt, 25);
+
+    callback(list.map(item => ({ id: crypto.randomUUID(), name: item })));
+  });
+
+  socket.on("CREATE_SCENARIO", async ({ scenarioName, list }: { scenarioName: string; list: string[] }, callback) => {
+    try {
+      const [_, roomCode] = Array.from(socket.rooms.values());
+
+      const room = rooms.get(roomCode);
+
+      if (!room) return;
+
+      const data = await getData(list);
+
+      const doc = await db.collection("scenarios").add({
+        name: scenarioName,
+        data,
+      });
+
+      const scenario: ScenarioType = {
+        value: doc.id,
+        label: scenarioName,
+      };
+
+      room.scenarios.unshift(scenario);
+      room.settings.scenario = doc.id;
+
+      callback({ isError: false });
+
+      io.to(roomCode).emit("SCENARIO", { scenario });
+    } catch (err) {
+      callback({ isError: true });
     }
   });
 });
