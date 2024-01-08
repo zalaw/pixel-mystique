@@ -55,6 +55,7 @@ const handleCreate = () => {
     {
       scenarioName: scenarioName.value.trim(),
       list: generatedList.value.filter(item => !item.markedForDeletion).map(item => item.name),
+      extra: extra.value.trim(),
     },
     (response: { isError: boolean }) => {
       loading.value = false;

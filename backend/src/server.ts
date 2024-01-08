@@ -332,37 +332,40 @@ io.on("connection", socket => {
     callback(list.map(item => ({ id: crypto.randomUUID(), name: item })));
   });
 
-  socket.on("CREATE_SCENARIO", async ({ scenarioName, list }: { scenarioName: string; list: string[] }, callback) => {
-    try {
-      const [_, roomCode] = Array.from(socket.rooms.values());
+  socket.on(
+    "CREATE_SCENARIO",
+    async ({ scenarioName, list, extra }: { scenarioName: string; list: string[]; extra: string }, callback) => {
+      try {
+        const [_, roomCode] = Array.from(socket.rooms.values());
 
-      const room = rooms.get(roomCode);
+        const room = rooms.get(roomCode);
 
-      if (!room) return;
+        if (!room) return;
 
-      const data = await getData(list);
+        const data = await getData(list, extra);
 
-      const doc = await db.collection("scenarios").add({
-        name: scenarioName,
-        data,
-      });
+        const doc = await db.collection("scenarios").add({
+          name: scenarioName,
+          data,
+        });
 
-      const scenario: ScenarioType = {
-        value: doc.id,
-        label: scenarioName,
-      };
+        const scenario: ScenarioType = {
+          value: doc.id,
+          label: scenarioName,
+        };
 
-      room.scenarios.unshift(scenario);
-      room.settings.scenario = doc.id;
+        room.scenarios.unshift(scenario);
+        room.settings.scenario = doc.id;
 
-      callback({ isError: false });
+        callback({ isError: false });
 
-      io.to(roomCode).emit("SCENARIO", { scenario });
-    } catch (err) {
-      console.log(err);
-      callback({ isError: true });
+        io.to(roomCode).emit("SCENARIO", { scenario });
+      } catch (err) {
+        console.log(err);
+        callback({ isError: true });
+      }
     }
-  });
+  );
 });
 
 if (process.env.NODE_ENV === "production") {
