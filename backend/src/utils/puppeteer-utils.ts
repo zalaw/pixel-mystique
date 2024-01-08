@@ -1,4 +1,5 @@
 import puppeteer, { Browser } from "puppeteer";
+import chromium from "chromium";
 
 const getImageURLS = async (browser: Browser, item: string) => {
   try {
@@ -25,6 +26,8 @@ const getImageURLS = async (browser: Browser, item: string) => {
 export const getData = async (list: string[], extra?: string) => {
   const browser = await puppeteer.launch({
     headless: "new",
+    executablePath: chromium.path,
+    args: ["--no-sandbox"],
   });
 
   const result = [];
