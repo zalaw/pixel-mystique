@@ -359,6 +359,7 @@ io.on("connection", socket => {
 
       io.to(roomCode).emit("SCENARIO", { scenario });
     } catch (err) {
+      console.log(err);
       callback({ isError: true });
     }
   });

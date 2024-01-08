@@ -77,7 +77,7 @@ const handleCreate = () => {
 
 const CreateScenarioModal = () => {
   return (
-    <Stack gap={"4rem"}>
+    <Stack gap={"3rem"}>
       <Stack>
         <TextInput
           error={responseError.value}
@@ -87,12 +87,12 @@ const CreateScenarioModal = () => {
           onInput={e => (prompt.value = e.currentTarget.value)}
         />
 
-        <TextInput
-          placeholder="E.g: badge (if you want only the badges of each football team)"
-          defaultValue={extra.value}
-          label="Extra data when getting images"
-          onInput={e => (extra.value = e.currentTarget.value)}
-        />
+        <Text span>
+          Your prompt will be:{" "}
+          <Text fw={600} span>
+            Generate a list of {prompt.value}
+          </Text>
+        </Text>
       </Stack>
 
       <Button disabled={prompt.value.trim() === ""} loading={loading.value} onClick={handleGenerate}>
@@ -134,6 +134,17 @@ const CreateScenarioModal = () => {
           </Stack>
 
           <Stack>
+            <TextInput
+              placeholder="E.g: badge (if you want only the badges of each football team)"
+              defaultValue={extra.value}
+              label="Extra info when getting images"
+              onInput={e => (extra.value = e.currentTarget.value)}
+            />
+
+            <Text>
+              Extra info will be: {generatedList.value[0].name} {extra.value}
+            </Text>
+
             <TextInput
               placeholder="E.g: Football Teams"
               defaultValue={scenarioName.value}
