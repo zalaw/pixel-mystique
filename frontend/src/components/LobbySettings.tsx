@@ -180,7 +180,7 @@ const LobbySettings = ({ currentClient }: LobbySettingsProps) => {
             {currentClient?.isHost ? (
               <Button
                 style={{ flexGrow: 1 }}
-                disabled={!areAllClientsReady}
+                disabled={!areAllClientsReady || room.value.scenarios.length === 0}
                 loading={loading.value}
                 onClick={handleStartOnClick}
               >

@@ -40,7 +40,7 @@ const Welcome = () => {
         scenarios: response.scenarios,
         settings: {
           ...room.value.settings,
-          scenario: response.scenarios[0]._id || "",
+          scenario: response.scenarios?.[0]?._id || "",
         },
         clients: [
           {

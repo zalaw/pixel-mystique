@@ -58,7 +58,7 @@ io.on("connection", socket => {
 
         status: "lobby",
         settings: {
-          scenario: scenarios[0]._id || "",
+          scenario: scenarios?.[0]?._id || "",
           seconds: 10,
           rounds: 4,
           grayscale: true,
