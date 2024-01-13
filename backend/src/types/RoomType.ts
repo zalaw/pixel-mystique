@@ -15,7 +15,7 @@ export type RoomSettingsType = {
 
 export type RoomType = {
   code: string;
-  scenarios: ScenarioType[];
+  scenarios: Pick<ScenarioType, "_id" | "name">[];
   clients: ClientType[];
   status: RoomStatusType;
   settings: RoomSettingsType;

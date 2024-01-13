@@ -2,6 +2,22 @@ import { RoundType } from "../types/RoundType";
 import { AnswerType } from "../types/AnswerType";
 import crypto from "crypto";
 import Jimp from "jimp";
+import { ScenarioItemType } from "../types/ScenarioItemType";
+import ScenarioModel from "../models/Scenario";
+
+const scenarios = [
+  {
+    name: "Scenario 1",
+    data: {
+      images: [
+        {
+          link: "link1",
+          dislikes: 0,
+        },
+      ],
+    },
+  },
+];
 
 const explicitKeywords = [
   "porn",
@@ -72,13 +88,15 @@ export const getPossibleAnswers = (correctAnswer: string, pool: string[], size: 
 export const generateRounds = async (
   pixelatedValue: number,
   grayscale: boolean,
-  pool: { name: string; imageURLS: string[] }[],
+  pool: ScenarioItemType[],
   size: number = 10
 ): Promise<RoundType[]> => {
   const shuffled = shuffleArray(pool).slice(0, size);
   const rounds = await Promise.all(
     shuffled.map(async entry => {
-      const image = await Jimp.read(entry.imageURLS[Math.floor(Math.random() * entry.imageURLS.length)]);
+      const selectedImage = entry.images[Math.floor(Math.random() * entry.images.length)];
+
+      const image = await Jimp.read(selectedImage.url);
       const originaImageBuffer = await image.getBufferAsync(Jimp.MIME_JPEG);
 
       image.resize(Jimp.AUTO, 500);
@@ -96,6 +114,7 @@ export const generateRounds = async (
           4
         ),
         correctAnswerId: "",
+        imageId: `${entry._id?.toString() || ""}|${selectedImage._id?.toString() || ""}`,
       };
 
       round.correctAnswerId = round.answers.find(answer => answer.text === entry.name)?.id || "";
@@ -105,4 +124,27 @@ export const generateRounds = async (
   );
 
   return rounds;
+};
+
+export const updateImageDislikes = async (scenarioId: string, id: string) => {
+  try {
+    const [itemId, imageId] = id.split("|");
+    const scenario = await ScenarioModel.findById(scenarioId);
+
+    if (!scenario) throw new Error("Scenario not found");
+
+    const scenarioItem = scenario.items.id(itemId);
+
+    if (!scenarioItem) throw new Error("Scenario item not found");
+
+    const scenarioImage = scenarioItem.images.id(imageId);
+
+    if (!scenarioImage) throw new Error("Scenario image not found");
+
+    scenarioImage.dislikes += 1;
+
+    await scenario?.save();
+  } catch (err) {
+    throw err;
+  }
 };

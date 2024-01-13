@@ -1,4 +1,7 @@
+import { ScenarioItemType } from "./ScenarioItemType";
+
 export type ScenarioType = {
-  value: string;
-  label: string;
+  _id?: string;
+  name: string;
+  items: ScenarioItemType[];
 };

@@ -39,7 +39,7 @@ export const getData = async (list: string[], extra?: string) => {
       ...(await Promise.all(
         batch.map(async item => ({
           name: item,
-          imageURLS: await getImageURLS(browser, `${extra} ${item}`),
+          imageURLS: await getImageURLS(browser, `$${item} ${extra}`),
         }))
       ))
     );

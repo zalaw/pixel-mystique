@@ -94,7 +94,7 @@ const LobbySettings = ({ currentClient }: LobbySettingsProps) => {
             readOnly={!currentClient?.isHost}
             label="Scenario"
             allowDeselect={false}
-            data={room.value.scenarios}
+            data={room.value.scenarios.map(item => ({ value: item._id || "", label: item.name }))}
             value={room.value.settings.scenario}
             onChange={value => handleGameSettingsChanged("scenario", value)}
             comboboxProps={{ shadow: "lg" }}

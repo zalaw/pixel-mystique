@@ -4,15 +4,17 @@ import { createServer } from "http";
 import cors from "cors";
 import { Server } from "socket.io";
 import crypto from "crypto";
-import { containsExplicitContent, delayWithError, generateRounds } from "./utils/general-utils";
+import { containsExplicitContent, delayWithError, generateRounds, updateImageDislikes } from "./utils/general-utils";
 import { RoomSettingsType, RoomType, SettingsValue } from "./types/RoomType";
 import { ClientType, ClientValue } from "./types/ClientType";
 import { RoundType } from "./types/RoundType";
 import path from "path";
 import { getData } from "./utils/puppeteer-utils";
 import { getList } from "./utils/openai-utils";
-import { db } from "./firebase";
 import { ScenarioType } from "./types/ScenarioType";
+import mongoose from "mongoose";
+import ScenarioModel from "./models/Scenario";
+import { ScenarioItemType } from "./types/ScenarioItemType";
 
 config();
 
@@ -37,8 +39,8 @@ const io = new Server(server, {
 io.on("connection", socket => {
   socket.on("CREATE_ROOM", async (name: string, callback) => {
     try {
-      const scenariosSnaphot = await db.collection("scenarios").get();
-      const scenarios = scenariosSnaphot.docs.map(doc => ({ value: doc.id, label: doc.data().name }));
+      const scenarios = (await ScenarioModel.find({}, { name: 1 })) as ScenarioType[];
+
       const code = crypto.randomUUID();
       const room: RoomType = {
         code,
@@ -56,7 +58,7 @@ io.on("connection", socket => {
 
         status: "lobby",
         settings: {
-          scenario: scenarios[0].value,
+          scenario: scenarios[0]._id || "",
           seconds: 10,
           rounds: 4,
           grayscale: true,
@@ -150,21 +152,25 @@ io.on("connection", socket => {
     io.to(roomCode).emit("GAME_STARTING");
 
     try {
-      // await delayWithError(3000);
+      const scenario = await ScenarioModel.findById(room.settings.scenario).exec();
 
-      const scenario = await db.collection("scenarios").doc(room.settings.scenario).get();
-
-      if (!scenario) await delayWithError(1);
+      if (!scenario) return await delayWithError(1);
 
       room.rounds = await generateRounds(
         room.settings.pixelatedValue,
         room.settings.grayscale,
-        scenario.data()?.data,
+        scenario.items as ScenarioItemType[],
         room.settings.rounds
       );
+
+      room.clients.forEach(client => (client.isReady = false));
+      room.status = "in-game";
     } catch (err) {
       console.log(err);
+
+      room.clients.forEach(client => (client.isReady = false));
       room.status = "lobby";
+
       io.to(roomCode).emit("ERROR_WHILE_STARTING");
 
       return;
@@ -340,32 +346,53 @@ io.on("connection", socket => {
 
         const room = rooms.get(roomCode);
 
-        if (!room) return;
+        if (!room) return socket.emit("ROOM_NOT_JOINABLE", "Room does not exist");
 
         const data = await getData(list, extra);
 
-        const doc = await db.collection("scenarios").add({
+        const scenarioToAdd = new ScenarioModel({
           name: scenarioName,
-          data,
+          items: data.map(item => ({
+            name: item.name,
+            images: item.imageURLS.map(imageURL => ({ url: imageURL, dislikes: 0 })),
+          })),
         });
 
-        const scenario: ScenarioType = {
-          value: doc.id,
-          label: scenarioName,
-        };
+        const newScenario = await scenarioToAdd.save();
 
-        room.scenarios.unshift(scenario);
-        room.settings.scenario = doc.id;
+        room.scenarios.unshift({ _id: newScenario._id.toString(), name: scenarioName });
+        room.settings.scenario = newScenario._id.toString();
 
         callback({ isError: false });
 
-        io.to(roomCode).emit("SCENARIO", { scenario });
+        io.to(roomCode).emit("SCENARIO", { scenario: newScenario });
       } catch (err) {
         console.log(err);
         callback({ isError: true });
       }
     }
   );
+
+  socket.on("DISLIKE_IMAGE", async (id: string, callback) => {
+    try {
+      const [_, roomCode] = Array.from(socket.rooms.values());
+
+      const room = rooms.get(roomCode);
+
+      if (!room) return socket.emit("ROOM_NOT_JOINABLE", "Room does not exist");
+
+      await updateImageDislikes(room.settings.scenario, id);
+
+      callback({ isError: false });
+    } catch (err) {
+      callback({ isError: true });
+    }
+  });
+
+  socket.on("TEST", () => {
+    console.log(rooms);
+    console.log(intervals);
+  });
 });
 
 if (process.env.NODE_ENV === "production") {
@@ -376,9 +403,21 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-server.listen(PORT, async () => {
-  console.log(`Server running on port ${PORT}`);
+mongoose
+  .connect(
+    `${process.env.DATABASE_URL}${
+      process.env.NODE_ENV === "production" ? "prod" : "dev"
+    }?retryWrites=true&w=majority` || "mongodb://127.0.0.1:27017"
+  )
+  .then(() => {
+    server.listen(PORT, async () => {
+      console.log(`Server running on port ${PORT}`);
 
-  rooms.clear();
-  intervals.clear();
-});
+      rooms.clear();
+      intervals.clear();
+    });
+  })
+  .catch(err => {
+    console.log("Could not connect");
+    console.log(err);
+  });

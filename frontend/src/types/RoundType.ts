@@ -6,4 +6,5 @@ export type RoundType = {
   image: ArrayBuffer;
   answers: AnswerType[];
   correctAnswerId: string;
+  imageId: string;
 };

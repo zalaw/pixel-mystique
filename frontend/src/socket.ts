@@ -121,7 +121,7 @@ socket.on("SCENARIO", ({ scenario }: { scenario: ScenarioType }) => {
     scenarios: [scenario, ...room.value.scenarios],
     settings: {
       ...room.value.settings,
-      scenario: scenario.value,
+      scenario: scenario._id || "",
     },
   };
 });

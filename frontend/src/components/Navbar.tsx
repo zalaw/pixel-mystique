@@ -1,4 +1,5 @@
 import { Box, Flex, Text } from "@mantine/core";
+import { socket } from "../socket";
 
 const Navbar = () => {
   return (
@@ -9,7 +10,7 @@ const Navbar = () => {
             Pixel
           </Text>
         </Box>
-        <Text size={"32px"} fw={700}>
+        <Text size={"32px"} fw={700} onClick={() => socket.volatile.emit("TEST")}>
           Mystique
         </Text>
       </Flex>
