@@ -11,19 +11,23 @@ const NotFound = () => {
   };
 
   return (
-    <Flex gap={"1rem"} h={"100%"} direction={"column"} align={"center"} justify={"center"}>
-      <Text fz={"96px"} fw={600}>
-        4{emoji}4
-      </Text>
-      <Text fw={600}>The page you were looking for does not exist</Text>
+    <Flex gap={"2rem"} h={"100%"} direction={"column"} align={"center"} justify={"center"}>
+      <Flex direction={"column"}>
+        <Text ta={"center"} className="not-found-text">
+          4{emoji}4
+        </Text>
+        <Text ta={"center"} px={"1rem"} fw={600}>
+          The page you were looking for does not exist
+        </Text>
+      </Flex>
 
       <Flex align={"center"} gap={"1rem"}>
         <Button component={Link} to={"/"}>
-          Let's go back home
+          Let's go home
         </Button>
         <Text>or</Text>
-        <Button variant={"subtle"} onClick={getRandomEmoji}>
-          Get a random emoji
+        <Button color="pink" onClick={getRandomEmoji}>
+          Random emoji
         </Button>
       </Flex>
     </Flex>

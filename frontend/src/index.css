@@ -84,8 +84,29 @@ img {
   object-fit: contain !important;
 }
 
+.main-padding {
+  padding: 2rem;
+}
+
+.inner {
+  font-size: 8px;
+}
+
+.not-found-text {
+  font-size: 96px;
+  font-weight: 700;
+}
+
 @media screen and (max-width: 425px) {
   body {
-    zoom: 0.85;
+    font-size: 1rem;
+  }
+
+  .main-padding {
+    padding: 1rem;
+  }
+
+  .not-found-text {
+    font-size: 64px;
   }
 }

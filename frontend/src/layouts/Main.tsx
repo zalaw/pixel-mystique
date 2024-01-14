@@ -7,7 +7,7 @@ const Main = () => {
     <Flex h={"100%"} direction="column">
       <Navbar />
 
-      <Box style={{ flexGrow: 1 }} py={"2rem"} px={"1.5rem"}>
+      <Box className="main-padding" style={{ flexGrow: 1 }}>
         <Outlet />
       </Box>
     </Flex>

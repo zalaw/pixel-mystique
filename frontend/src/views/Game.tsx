@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Stack, Loader, Button, Flex, Modal, Text } from "@mantine/core";
-import { IconArrowNarrowLeft } from "@tabler/icons-react";
+import { IconArrowNarrowLeft, IconLogout } from "@tabler/icons-react";
 import { signal } from "@preact/signals-react";
 
 import { gameNotJoinableMessage, loading, room, name } from "../App";
@@ -62,10 +62,18 @@ const Game = () => {
     return (
       <WrapperCard>
         <Flex direction={"column"} gap={"1rem"}>
-          <Text fz={"14px"} fw={500} c={"red"}>
+          <Text ta={"center"} fz={"16px"} c={"red"}>
             Unable to connect to the server
           </Text>
-          <Button onClick={() => window.location.reload()}>Try again</Button>
+
+          <Flex align="center" justify={"center"}>
+            <Button
+              leftSection={<IconLogout size={16} style={{ transform: "scaleX(-1)" }} />}
+              onClick={handleOnQuitClick}
+            >
+              Quit
+            </Button>
+          </Flex>
         </Flex>
       </WrapperCard>
     );
@@ -91,7 +99,7 @@ const Game = () => {
       </Modal>
 
       <Stack gap="2rem">
-        <WrapperCard transparent p={0}>
+        <WrapperCard transparent>
           <Flex justify={"space-between"}>
             <Button leftSection={<IconArrowNarrowLeft />} variant="outline" w={"6rem"} onClick={handleOnQuitClick}>
               Quit

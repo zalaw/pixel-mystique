@@ -92,7 +92,7 @@ const Welcome = () => {
           </Button>
 
           {isSocketError.value ? (
-            <Text fz={"14px"} fw={500} c={"red"}>
+            <Text ta={"center"} fz={"16px"} c={"red"}>
               Unable to connect to the server
             </Text>
           ) : null}

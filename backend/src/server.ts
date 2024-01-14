@@ -302,6 +302,8 @@ io.on("connection", socket => {
   });
 
   socket.on("disconnecting", () => {
+    console.log("client disconnected");
+
     const [_, roomCode] = Array.from(socket.rooms.values());
 
     const room = rooms.get(roomCode);

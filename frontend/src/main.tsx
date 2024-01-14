@@ -2,14 +2,17 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { MantineProvider, createTheme } from "@mantine/core";
+import { Notifications } from "@mantine/notifications";
+
 import App from "./App.tsx";
 
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "./index.css";
-import { Notifications } from "@mantine/notifications";
 
 const theme = createTheme({
+  fontFamily: "Arial",
+  scale: 0.9,
   colors: {
     dark: [
       "#C1C2C5",

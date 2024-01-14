@@ -3,16 +3,16 @@ import { Card } from "@mantine/core";
 
 interface WrapperCardProps extends HTMLAttributes<HTMLDivElement> {
   transparent?: boolean;
-  p?: number | string;
   children: React.ReactNode;
 }
 
-const WrapperCard = ({ transparent = false, p = "1.5rem", children, ...rest }: WrapperCardProps) => {
+const WrapperCard = ({ transparent = false, children, ...rest }: WrapperCardProps) => {
   return (
     <Card
+      className={transparent ? "" : "main-padding"}
+      p={transparent ? 0 : "auto"}
       withBorder={transparent ? false : true}
       bg={transparent ? "transparent" : ""}
-      p={p}
       w={"100%"}
       maw={"40rem"}
       m={"auto"}
